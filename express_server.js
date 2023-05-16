@@ -48,6 +48,17 @@ app.post('/urls/:id/delete', (req,res) => {
   delete urlDatabase[req.params.id];
   res.redirect('/urls');
 })
+
+app.post('/urls/:id/update', (req,res) => {
+  urlDatabase[req.params.id] = req.body.longURL;
+  res.redirect('/urls');
+})
+
+app.post('/urls/:id', (req,res) => {
+  res.redirect(`/urls/${req.params.id}`);
+})
+
+app.post('/urls')
 app.get("/urls/:id", (req, res) => {
   const templateVars = {id: req.params.id, longURL: urlDatabase};
   res.render('urls_show', templateVars);
