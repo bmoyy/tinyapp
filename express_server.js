@@ -31,6 +31,11 @@ app.post('/login', (req,res) => {
   res.redirect('/urls');
 })
 
+app.post('/logout', (req,res) => {
+  res.clearCookie('username');
+  res.redirect('/urls');
+})
+
 app.get("/urls", (req, res) => {
   const templateVars = {
     username: req.cookies["username"], 
@@ -69,7 +74,11 @@ app.post('/urls/:id', (req,res) => {
 
 
 app.get("/urls/:id", (req, res) => {
-  const templateVars = {id: req.params.id, longURL: urlDatabase};
+  const templateVars = {
+    id: req.params.id,
+    username: req.cookies["username"],
+     longURL: urlDatabase
+    };
   res.render('urls_show', templateVars);
 });
 
