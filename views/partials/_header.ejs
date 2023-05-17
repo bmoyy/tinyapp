@@ -17,7 +17,7 @@
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
-      <% if (!username) { %>
+      <% if (!users[user_id]) { %>
           <form method="POST" action="/login" class="nav-item">
           <input
           name="username"
@@ -28,7 +28,7 @@
       </form>
         <% } else { %>
         <div class="form-group mb-0">
-        <a class="nav-item">Logged in as: <%= username %></a>
+        <a class="nav-item">Logged in as: <%= users[user_id].email %></a>
         </div>
         <form method="POST" action="/logout" class="nav-item"><button class="btn" type="submit">logout</button></form>
         <% } %>
