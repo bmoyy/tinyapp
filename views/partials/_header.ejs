@@ -18,19 +18,15 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
       <% if (!users[user_id]) { %>
-          <form method="POST" action="/login" class="nav-item">
-          <input
-          name="username"
-          placeholder="username"
-          style="width: 300px; margin: 1em"
-          />
-        <button class="btn" type="submit">Login</button>
-      </form>
+        <div class="navbar-nav">
+        <a class="nav-item nav-link" href="/login">Login</a>
+        <a class="nav-item nav-link" href="/register">Register</a>
+      </div>
         <% } else { %>
-        <div class="form-group mb-0">
-        <a class="nav-item">Logged in as: <%= users[user_id].email %></a>
+        <div class="container">
         </div>
-        <form method="POST" action="/logout" class="nav-item"><button class="btn" type="submit">logout</button></form>
+        <a class="nav-item">Logged in as: <%= users[user_id].email %></a>      
+        <form method="POST" action="/logout" class="nav-item"><button class="btn btn-success navbar-btn" type="submit">Logout</button></form>
         <% } %>
       </div>
     </div>
