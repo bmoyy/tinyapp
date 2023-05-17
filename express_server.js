@@ -48,6 +48,9 @@ function doesEmailExist(newEmail, password, users) {
 }
 
 app.get("/register", (req, res) => {
+  if(req.cookies['user_id']){
+    res.redirect('/urls');
+  }
   const templateVars = {
     user_id: req.cookies['user_id'],
     users: users,
@@ -69,6 +72,9 @@ app.post('/register', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
+  if(req.cookies['user_id']){
+    res.redirect('/urls');
+  }
   const templateVars = {
     user_id: req.cookies['user_id'],
     users: users,
@@ -105,6 +111,9 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
+  if(!req.cookies['user_id']){
+    res.redirect('/login');
+  }
   const templateVars = {
     user_id: req.cookies['user_id'],
     users: users,
@@ -114,12 +123,18 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
+  if(!req.cookies['user_id']){
+    res.send('Log in to create URLs');
+  }
   let randID = generateRandomString();
   urlDatabase[randID] = req.body.longURL;
   res.redirect(`/urls/${randID}`);
 });
 
 app.get("/u/:id", (req, res) => {
+  if(!urlDatabase[req.params.id]) {
+    res.send("The link does not exist.");
+  }
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
