@@ -1,12 +1,12 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
+const bcrypt = require("bcryptjs");
 const cookieParser = require('cookie-parser');
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
 
 const urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "123" },
@@ -17,7 +17,7 @@ const users = {
   123: {
     id: "123",
     email: "a@a.com",
-    password: "asdf",
+    password: bcrypt.hashSync("asdf", 10),
   },
   user2RandomID: {
     id: "user2RandomID",
@@ -36,7 +36,7 @@ function generateRandomString() {
 };
 
 function doesEmailExist(newEmail, password, users) {
-  if (newEmail === '' || password === '') {
+  if (!newEmail || !password) {
     return true;
   }
   for (user in users) {
@@ -73,14 +73,15 @@ app.post('/register', (req, res) => {
   if (!doesEmailExist(req.body.email, req.body.password, users)) {
     let randID = generateRandomString();
     res.cookie('user_id', randID);
-    users[randID] = {};
-    users[randID].id = randID;
-    users[randID].email = req.body.email;
-    users[randID].password = req.body.password;
-    console.log(users);
+    const hashedPassword = bcrypt.hashSync(req.body.password, 10);
+    users[randID] = {
+      id : randID,
+      email : req.body.email,
+      password : hashedPassword
+    };
     res.redirect('/urls');
   };
-  res.send("400 bad request");
+  res.status(400).send("Email already registered");
 });
 
 app.get('/login', (req, res) => {
@@ -97,14 +98,18 @@ app.get('/login', (req, res) => {
 
 app.post('/login', (req, res) => {
   if (doesEmailExist(req.body.email, req.body.password, users)) {
-    for (user in users) {
-      if (users[user].email === req.body.email && users[user].password === req.body.password) {
+    for (const user in users) {
+      if (users[user].email === req.body.email) {
+        let foundUser = users[user];
+        if (!bcrypt.compareSync(req.body.password, foundUser.password)) {
+          return res.status(400).send('Passwords do not match');
+        };
         res.cookie('user_id', user);
         res.redirect('/urls');
       }
     }
   }
-  res.send("403 Forbidden");
+  res.status(400).send("Email not registered");
 });
 
 app.post('/logout', (req, res) => {
@@ -165,11 +170,11 @@ app.post('/urls/:id/delete', (req, res) => {
   }
   for (let url in urlDatabase) {
     if (urlDatabase[url].userID === user.id) {
-      console.log(urlDatabase[url].userID)
+      console.log(urlDatabase[url].userID);
       delete urlDatabase[req.params.id];
       res.redirect('/urls');
     }
-  } 
+  }
   res.send('403 Forbidden');
 });
 
