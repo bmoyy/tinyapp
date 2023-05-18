@@ -74,8 +74,10 @@ app.post('/register', (req, res) => {
     let randID = generateRandomString();
     res.cookie('user_id', randID);
     users[randID] = {};
+    users[randID].id = randID;
     users[randID].email = req.body.email;
     users[randID].password = req.body.password;
+    console.log(users);
     res.redirect('/urls');
   };
   res.send("400 bad request");
