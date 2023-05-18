@@ -9,8 +9,8 @@ app.use(cookieParser());
 
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "123" },
+  "9sm5xK": { longURL: "http://www.google.com", userID: "123" }
 };
 
 const users = {
@@ -47,8 +47,18 @@ function doesEmailExist(newEmail, password, users) {
   return false;
 }
 
+function urlsforUser(id) {
+  let userUrlDatabase = {};
+  for (url in urlDatabase) {
+    if (urlDatabase[url].userID === id) {
+      userUrlDatabase[url] = urlDatabase[url].longURL;
+    }
+  }
+  return userUrlDatabase;
+}
+
 app.get("/register", (req, res) => {
-  if(req.cookies['user_id']){
+  if (req.cookies['user_id']) {
     res.redirect('/urls');
   }
   const templateVars = {
@@ -72,7 +82,7 @@ app.post('/register', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  if(req.cookies['user_id']){
+  if (req.cookies['user_id']) {
     res.redirect('/urls');
   }
   const templateVars = {
@@ -85,7 +95,6 @@ app.get('/login', (req, res) => {
 
 app.post('/login', (req, res) => {
   if (doesEmailExist(req.body.email, req.body.password, users)) {
-    console.log("yes");
     for (user in users) {
       if (users[user].email === req.body.email && users[user].password === req.body.password) {
         res.cookie('user_id', user);
@@ -102,16 +111,21 @@ app.post('/logout', (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+  let user = users[req.cookies['user_id']];
+  if (!user) {
+    res.send('Please log in or register an account');
+  }
   const templateVars = {
     user_id: req.cookies['user_id'],
     users: users,
-    urls: urlDatabase
+    urls: urlsforUser(user.id)
   };
   res.render('urls_index', templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  if(!req.cookies['user_id']){
+  let user = users[req.cookies['user_id']];
+  if (!user) {
     res.redirect('/login');
   }
   const templateVars = {
@@ -123,30 +137,52 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  if(!req.cookies['user_id']){
-    res.send('Log in to create URLs');
+  let user = users[req.cookies['user_id']];
+  if (!user) {
+    res.send('Please log in to create URLs');
   }
   let randID = generateRandomString();
-  urlDatabase[randID] = req.body.longURL;
+  urlDatabase[randID] = {};
+  urlDatabase[randID].longURL = req.body.longURL;
+  urlDatabase[randID].userID = req.cookies['user_id'];
   res.redirect(`/urls/${randID}`);
 });
 
 app.get("/u/:id", (req, res) => {
-  if(!urlDatabase[req.params.id]) {
+  if (!urlDatabase[req.params.id]) {
     res.send("The link does not exist.");
   }
-  const longURL = urlDatabase[req.params.id];
+  const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
 });
 
 app.post('/urls/:id/delete', (req, res) => {
-  delete urlDatabase[req.params.id];
-  res.redirect('/urls');
+  let user = users[req.cookies['user_id']];
+  if (!user) {
+    res.send('Please log in or register an account');
+  }
+  for (let url in urlDatabase) {
+    if (urlDatabase[url].userID === user.id) {
+      console.log(urlDatabase[url].userID)
+      delete urlDatabase[req.params.id];
+      res.redirect('/urls');
+    }
+  } 
+  res.send('403 Forbidden');
 });
 
 app.post('/urls/:id/update', (req, res) => {
-  urlDatabase[req.params.id] = req.body.longURL;
-  res.redirect('/urls');
+  let user = users[req.cookies['user_id']];
+  if (!user) {
+    res.send('Please log in or register an account');
+  }
+  for (let url in urlDatabase) {
+    if (urlDatabase[url].userID === user.id) {
+      urlDatabase[req.params.id].longURL = req.body.longURL;
+      res.redirect('/urls');
+    }
+  }
+  res.send('403 Forbidden');
 });
 
 app.post('/urls/:id', (req, res) => {
@@ -155,13 +191,22 @@ app.post('/urls/:id', (req, res) => {
 
 
 app.get("/urls/:id", (req, res) => {
-  const templateVars = {
-    id: req.params.id,
-    user_id: req.cookies['user_id'],
-    users: users,
-    longURL: urlDatabase
-  };
-  res.render('urls_show', templateVars);
+  let user = users[req.cookies['user_id']];
+  if (!user) {
+    res.send('Please log in or register an account');
+  }
+  for (let url in urlDatabase) {
+    if (urlDatabase[url].userID === user.id) {
+      const templateVars = {
+        id: req.params.id,
+        user_id: req.cookies['user_id'],
+        users: users,
+        longURL: urlDatabase
+      };
+      res.render('urls_show', templateVars);
+    }
+  }
+  res.send('403 Forbidden');
 });
 
 
