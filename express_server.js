@@ -30,6 +30,14 @@ const users = {
   },
 };
 
+app.get("/", (req, res) => {
+  let user_id = req.session.user_id;
+  if (user_id) {
+    res.redirect('/urls');
+  }
+  res.redirect('/login');
+})
+
 app.get("/register", (req, res) => {
   let user_id = req.session.user_id;
   if (user_id) {
@@ -64,6 +72,7 @@ app.get('/login', (req, res) => {
   let user_id = req.session.user_id;
   if (user_id) {
     res.redirect('/urls');
+    return;
   }
   const templateVars = {
     user: users[user_id],
@@ -98,7 +107,6 @@ app.get("/urls", (req, res) => {
     user: users[user_id],
     urls: urlsforUser(req.session.user_id, urlDatabase)
   };
-  console.log(templateVars["user"]);
   res.render('urls_index', templateVars);
 });
 
