@@ -98,7 +98,20 @@ app.get("/urls", (req, res) => {
     user: users[user_id],
     urls: urlsforUser(req.session.user_id, urlDatabase)
   };
+  console.log(templateVars["user"]);
   res.render('urls_index', templateVars);
+});
+
+app.post("/urls", (req, res) => {
+  let user_id = req.session.user_id;
+  if (!user_id) {
+    res.send('Please log in to create URLs');
+  }
+  let randID = generateRandomString();
+  urlDatabase[randID] = {};
+  urlDatabase[randID].longURL = req.body.longURL;
+  urlDatabase[randID].userID = user_id;
+  res.redirect(`/urls/${randID}`);
 });
 
 app.get("/urls/new", (req, res) => {
@@ -113,17 +126,6 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
-app.post("/urls", (req, res) => {
-  let user_id = req.session.user_id;
-  if (!user_id) {
-    res.send('Please log in to create URLs');
-  }
-  let randID = generateRandomString();
-  urlDatabase[randID] = {};
-  urlDatabase[randID].longURL = req.body.longURL;
-  urlDatabase[randID].userID = user_id;
-  res.redirect(`/urls/${randID}`);
-});
 
 app.get("/u/:id", (req, res) => {
   if (!urlDatabase[req.params.id]) {
@@ -144,6 +146,7 @@ app.post('/urls/:id/delete', (req, res) => {
       res.redirect('/urls');
     }
   }
+  res.status(403).send('Access Forbidden');
 });
 
 app.post('/urls/:id/update', (req, res) => {
@@ -157,6 +160,7 @@ app.post('/urls/:id/update', (req, res) => {
       res.redirect('/urls');
     }
   }
+  res.status(403).send('Access Forbidden');
 });
 
 app.post('/urls/:id', (req, res) => {
@@ -179,6 +183,7 @@ app.get("/urls/:id", (req, res) => {
       res.render('urls_show', templateVars);
     }
   }
+  res.status(400).send('This account does not have access to this link');
 });
 
 
