@@ -32,27 +32,26 @@ const users = {
 
 app.get("/", (req, res) => {
   let user_id = req.session.user_id;
-  if (user_id) {
-    res.redirect('/urls');
+  if (users[user_id]) {
+    return res.redirect('/urls');
   }
   res.redirect('/login');
-})
+});
 
 app.get("/register", (req, res) => {
   let user_id = req.session.user_id;
-  if (user_id) {
-    res.redirect('/urls');
+  if (users[user_id]) {
+    return res.redirect('/urls');
   }
   const templateVars = {
     user: users[user_id],
-    urls: urlDatabase
   };
   res.render('register', templateVars);
 });
 
 app.post('/register', (req, res) => {
   if (getUserByEmail(req.body.email, users)) {
-    res.status(400).send("Email already registered");
+    return res.status(400).send("Email already registered");
   };
   if (!req.body.email || !req.body.password) {
     return res.status(400).send('Please provide an email and password');
@@ -70,21 +69,19 @@ app.post('/register', (req, res) => {
 
 app.get('/login', (req, res) => {
   let user_id = req.session.user_id;
-  if (user_id) {
-    res.redirect('/urls');
-    return;
+  if (users[user_id]) {
+    return res.redirect('/urls');
   }
   const templateVars = {
     user: users[user_id],
-    urls: urlDatabase
   };
   res.render('login', templateVars);
 });
 
 app.post('/login', (req, res) => {
-  let foundUser = getUserByEmail(req.body.email,users);
+  let foundUser = getUserByEmail(req.body.email, users);
   if (!foundUser) {
-    res.status(400).send("Email not registered");
+    return res.status(400).send("Email not registered");
   };
   if (!bcrypt.compareSync(req.body.password, foundUser.password)) {
     return res.status(400).send('Passwords do not match');
@@ -100,8 +97,8 @@ app.post('/logout', (req, res) => {
 
 app.get("/urls", (req, res) => {
   let user_id = req.session.user_id;
-  if (!user_id) {
-    res.send('Please log in or register an account');
+  if (!users[user_id]) {
+    return res.send('Please log in or register an account');
   }
   const templateVars = {
     user: users[user_id],
@@ -112,8 +109,8 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   let user_id = req.session.user_id;
-  if (!user_id) {
-    res.send('Please log in to create URLs');
+  if (!users[user_id]) {
+    return res.send('Please log in to create URLs');
   }
   let randID = generateRandomString();
   urlDatabase[randID] = {};
@@ -124,12 +121,11 @@ app.post("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   let user_id = req.session.user_id;
-  if (!user_id) {
-    res.redirect('/login');
+  if (!users[user_id]) {
+    return res.redirect('/login');
   }
   const templateVars = {
     user: users[user_id],
-    urls: urlDatabase
   };
   res.render("urls_new", templateVars);
 });
@@ -137,7 +133,7 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/u/:id", (req, res) => {
   if (!urlDatabase[req.params.id]) {
-    res.send("The link does not exist.");
+    return res.status(403).send("The link does not exist.");
   }
   const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
@@ -145,30 +141,34 @@ app.get("/u/:id", (req, res) => {
 
 app.post('/urls/:id/delete', (req, res) => {
   let user_id = req.session.user_id;
-  if (!user_id) {
-    res.status(400).send('Please log in or register an account');
+  let url = urlDatabase[req.params.id];
+  if (!users[user_id]) {
+    return res.status(400).send('Please log in or register an account');
   }
-  for (let url in urlDatabase) {
-    if (urlDatabase[url].userID === user_id) {
-      delete urlDatabase[req.params.id];
-      res.redirect('/urls');
-    }
+  if (!url) {
+    return res.status(404).send("This link does not exist");
   }
-  res.status(403).send('Access Forbidden');
+  if (url.userID !== user_id) {
+    return res.status(403).send("Access forbidden");
+  }
+  delete urlDatabase[req.params.id];
+  res.redirect('/urls');
 });
 
-app.post('/urls/:id/update', (req, res) => {
+app.post('/urls/:id', (req, res) => {
   let user_id = req.session.user_id;
-  if (!user_id) {
-    res.status(400).send('Please log in or register an account');
+  let url = urlDatabase[req.params.id];
+  if (!users[user_id]) {
+    return res.status(400).send('Please log in or register an account');
   }
-  for (let url in urlDatabase) {
-    if (urlDatabase[url].userID === user_id) {
-      urlDatabase[req.params.id].longURL = req.body.longURL;
-      res.redirect('/urls');
-    }
+  if (!url) {
+    return res.status(404).send("This link does not exist");
   }
-  res.status(403).send('Access Forbidden');
+  if (url.userID !== user_id) {
+    return res.status(403).send("Access forbidden");
+  }
+  urlDatabase[req.params.id].longURL = req.body.longURL;
+  res.redirect('/urls');
 });
 
 app.post('/urls/:id', (req, res) => {
@@ -178,20 +178,23 @@ app.post('/urls/:id', (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   let user_id = req.session.user_id;
-  if (!user_id) {
-    res.status(400).send('Please log in or register an account');
+  let url = urlDatabase[req.params.id];
+  if (!users[user_id]) {
+    return res.status(400).send('Please log in or register an account');
   }
-  for (let url in urlDatabase) {
-    if (urlDatabase[url].userID === user_id) {
-      const templateVars = {
-        id: req.params.id,
-        user: users[user_id],
-        longURL: urlDatabase
-      };
-      res.render('urls_show', templateVars);
-    }
+  if (!url) {
+    return res.status(404).send("This link does not exist");
   }
-  res.status(400).send('This account does not have access to this link');
+  if (url.userID !== user_id) {
+    return res.status(403).send("This account does not have access to this link");
+  }
+  const templateVars = {
+    id: req.params.id,
+    user: users[user_id],
+    longURL: urlDatabase
+  };
+  return res.render('urls_show', templateVars);
+
 });
 
 
