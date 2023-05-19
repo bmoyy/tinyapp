@@ -17,7 +17,7 @@
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
-      <% if (!users[user_id]) { %>
+      <% if (!user) { %>
         <div class="navbar-nav">
         <a class="nav-item nav-link" href="/login">Login</a>
         <a class="nav-item nav-link" href="/register">Register</a>
@@ -25,7 +25,7 @@
         <% } else { %>
         <div class="container">
         </div>
-        <a class="nav-item">Logged in as: <%= users[user_id].email %></a>      
+        <a class="nav-item">Logged in as: <%= user.email %></a>      
         <form method="POST" action="/logout" class="nav-item"><button class="btn btn-success navbar-btn" type="submit">Logout</button></form>
         <% } %>
       </div>
